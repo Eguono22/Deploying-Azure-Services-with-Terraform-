@@ -26,7 +26,7 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  sanitized_prefix = regexreplace(lower(var.prefix), "[^a-z0-9]", "")
+  sanitized_prefix = replace(lower(var.prefix), "/[^a-z0-9]/", "")
   base_prefix      = length(local.sanitized_prefix) > 0 ? local.sanitized_prefix : "app"
   name_prefix      = substr(local.base_prefix, 0, 16)
 
@@ -57,11 +57,10 @@ resource "azurerm_mysql_flexible_server" "main" {
   administrator_password = var.mysql_admin_password
   backup_retention_days  = 7
   sku_name               = var.mysql_sku_name
-  storage_mb             = 32768
   version                = var.mysql_version
 }
 
-resource "azurerm_mysql_flexible_server_database" "app" {
+resource "azurerm_mysql_flexible_database" "app" {
   name                = var.mysql_database_name
   resource_group_name = azurerm_resource_group.main.name
   server_name         = azurerm_mysql_flexible_server.main.name
@@ -92,7 +91,7 @@ resource "azurerm_linux_web_app" "main" {
   app_settings = {
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = "false"
     MYSQL_HOST                          = azurerm_mysql_flexible_server.main.fqdn
-    MYSQL_DATABASE                      = azurerm_mysql_flexible_server_database.app.name
+    MYSQL_DATABASE                      = azurerm_mysql_flexible_database.app.name
   }
 
 }
